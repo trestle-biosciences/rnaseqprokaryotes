@@ -40,14 +40,14 @@ workflow RNASEQPROKARYOTES {
 
     FASTQC(ch_samplesheet)
     ch_multiqc_files = ch_multiqc_files
-        .mix(FASTQC.out.zip)
-        .mix(FASTQC.out.html)
+        .mix(FASTQC.out.zip.map { _meta, zip -> zip })
+        .mix(FASTQC.out.html.map { _meta, html -> html })
 
     TRIMGALORE(ch_samplesheet)
     ch_multiqc_files = ch_multiqc_files
-        .mix(TRIMGALORE.out.log)
-        .mix(TRIMGALORE.out.zip)
-        .mix(TRIMGALORE.out.html)
+        .mix(TRIMGALORE.out.log.map { _meta, log -> log })
+        .mix(TRIMGALORE.out.zip.map { _meta, zip -> zip })
+        .mix(TRIMGALORE.out.html.map { _meta, html -> html })
 
     BOWTIE2_BUILD (ch_fasta) 
 
@@ -58,25 +58,29 @@ workflow RNASEQPROKARYOTES {
         false, //params.save_unaligned,
         true ///params.sort_bams
     )
-    ch_multiqc_files = ch_multiqc_files.mix(BOWTIE2_ALIGN.out.log)
+    ch_multiqc_files = ch_multiqc_files.mix(BOWTIE2_ALIGN.out.log.map { _meta, log -> log })
 
     //Module GFFREAD
     GFFREAD (
         ch_gff,
         ch_reference_fasta
     )
-   
-    GFFREAD.out.gtf.set{ ch_gtf }
+
+    ch_gtf = GFFREAD.out.gtf.map { _meta, gtf -> gtf }
 
     //module subread/featurecounts
-    ch_fc = BOWTIE2_ALIGN.out.bam.map {meta, bam -> [[id:meta.id, single_end:meta.single_end, strandedness:meta.strandedness], bam]}
-    ch_fc = ch_fc.merge(ch_gtf)
+    ch_fc = BOWTIE2_ALIGN.out.bam
+        .combine(ch_gtf)
+        .map { bam_tuple, gtf ->
+            def (meta, bam) = bam_tuple
+            [[id: meta.id, single_end: meta.single_end, strandedness: meta.strandedness], bam, gtf]
+        }
 
 
     SUBREAD_FEATURECOUNTS (
          ch_fc
     )
-    ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary)
+        ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary.map { _meta, summary -> summary })
 
     //
     // Collate and save software versions
