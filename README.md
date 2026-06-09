@@ -79,6 +79,23 @@ Example params file (`params.json`):
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/get_started/run-your-first-pipeline) with `-profile test` before running the workflow on actual data.
 
+## Reproducible Run Recipe
+
+If you want to rerun this pipeline in a reproducible way, keep the exact command, the pipeline release tag, the Nextflow version, and the repository version of the AWS Batch config and input samplesheet together. A typical run looks like this:
+
+```bash
+NXF_VER=26.04.3 nextflow run trestlebiosciences/rnaseqprokaryotes -r v1.0.0 \
+   -c arg_rnaseq_2026.config \
+   -profile trestle \
+   --input 'assets/samplesheet_all_replicates.csv' \
+   --outdir 's3://lp-arg-rnaseq-and-tnseq/rnaseq/results_2026/' \
+   --gff 's3://lp-arg-rnaseq-and-tnseq/rnaseq/references/acinetobacter_baumannii_atcc_17978_mff_combined.gff' \
+   --fasta 's3://lp-arg-rnaseq-and-tnseq/rnaseq/references/acinetobacter_baumannii_atcc_17978_mff_combined.fasta' \
+   -work-dir 's3://lp-arg-rnaseq-and-tnseq/rnaseq/work_2026/'
+```
+
+The `arg_rnaseq_2026.config` file should only contain execution settings such as the AWS Batch executor, queue settings, and retry logic. Keep analysis inputs, such as the samplesheet and reference files, in the command line or a params file.
+
 
 First, prepare a samplesheet with your input data that looks as follows:
 
