@@ -2,9 +2,7 @@
 
 ## Introduction
 
-**trestlebiosciences/rnaseqprokaryotes** is a bioinformatics pipeline that ...
-
-This pipeline currently performs read quality control, adapter/quality trimming, reference indexing and alignment, annotation conversion, feature quantification, and run-level reporting for prokaryotic RNA-seq data.
+**trestlebiosciences/rnaseqprokaryotes** is a bioinformatics pipeline that performs read quality control, adapter/quality trimming, reference indexing and alignment, annotation conversion, feature quantification, and run-level reporting for prokaryotic RNA-seq data.
 
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
@@ -125,9 +123,8 @@ nextflow run trestlebiosciences/rnaseqprokaryotes \
 
 trestlebiosciences/rnaseqprokaryotes was originally written by @bradfordwinkelman.
 
-We thank the following people for their extensive assistance in the development of this pipeline:
+We thank the following people for their extensive assistance in the development of this pipeline: @jonwinkelman
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
 ## Contributions and Support
 
