@@ -71,8 +71,8 @@ workflow RNASEQPROKARYOTES {
     //module subread/featurecounts
     ch_fc = BOWTIE2_ALIGN.out.bam
         .combine(ch_gtf)
-        .map { bam_tuple, gtf ->
-            def (meta, bam) = bam_tuple
+        .map { tuple ->
+            def (meta, bam, gtf) = tuple
             [[id: meta.id, single_end: meta.single_end, strandedness: meta.strandedness], bam, gtf]
         }
 
