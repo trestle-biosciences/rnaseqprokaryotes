@@ -23,6 +23,22 @@
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
                     "fa_icon": "fas fa-file-csv"
                 },
+                "fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Path to reference genome FASTA file.",
+                    "help_text": "Reference FASTA used to build the Bowtie2 index for read alignment.",
+                    "fa_icon": "fas fa-dna"
+                },
+                "gff": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Path to annotation GFF or GFF3 file.",
+                    "help_text": "Annotation file used to generate GTF input for feature counting.",
+                    "fa_icon": "fas fa-file-code"
+                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",

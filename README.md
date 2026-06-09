@@ -4,46 +4,118 @@
 
 **trestlebiosciences/rnaseqprokaryotes** is a bioinformatics pipeline that ...
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+This pipeline currently performs read quality control, adapter/quality trimming, reference indexing and alignment, annotation conversion, feature quantification, and run-level reporting for prokaryotic RNA-seq data.
+
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/community/brand/workflow-schematics#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+Default workflow steps:
+
+1. Read QC ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+2. Read trimming ([Trim Galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/))
+3. Reference index generation and alignment ([Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml))
+4. Annotation conversion ([gffread](https://github.com/gpertea/gffread))
+5. Gene-level quantification ([featureCounts / Subread](http://subread.sourceforge.net/))
+6. Aggregated reporting ([MultiQC](http://multiqc.info/))
+
+## Installed Modules
+
+Installed nf-core modules (from [modules/nf-core](modules/nf-core)):
+
+1. bowtie2/align
+2. bowtie2/build
+3. fastqc
+4. gffread
+5. multiqc
+6. subread/featurecounts
+7. trimgalore
+
+Installed nf-core subworkflows (from [subworkflows/nf-core](subworkflows/nf-core)):
+
+1. utils_nextflow_pipeline
+2. utils_nfcore_pipeline
+3. utils_nfschema_plugin
+
+Source of record for installed components and pinned commits: [modules.json](modules.json).
+
+## Parameters
+
+Core run parameters:
+
+1. `--input` (required): Sample sheet CSV describing input FASTQ files.
+2. `--fasta` (required): Reference genome FASTA used to build Bowtie2 indexes.
+3. `--gff` (required): Annotation file in GFF/GFF3 format used for downstream counting.
+4. `--outdir` (required): Output directory for all pipeline results.
+
+Reporting and run metadata:
+
+1. `--multiqc_title`: Custom title for the MultiQC report.
+2. `--multiqc_config`: Custom MultiQC config YAML.
+3. `--multiqc_logo`: Logo path for MultiQC branding.
+4. `--multiqc_methods_description`: Custom methods description YAML for MultiQC.
+5. `--email` / `--email_on_fail`: Completion email notifications.
+
+Execution and helper flags:
+
+1. `--help`: Show the standard help output.
+2. `--help_full`: Show detailed help output.
+3. `--show_hidden`: Include hidden parameters in help output.
+4. `--version`: Print pipeline version and exit.
+
+You can provide parameters either on the command line or with a params file.
+
+Example params file (`params.json`):
+
+```json
+{
+   "input": "samplesheet.csv",
+   "fasta": "reference.fasta",
+   "gff": "annotation.gff3",
+   "outdir": "results",
+   "multiqc_title": "RNA-seq Prokaryotes Run"
+}
+```
 
 ## Usage
 
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/get_started/run-your-first-pipeline) with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
 
 First, prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+sample,fastq_1,fastq_2,strandedness
+CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz,forward
+CONTROL_REP2,AEG588A1_S2_L002_R1_001.fastq.gz,AEG588A1_S2_L002_R2_001.fastq.gz,reverse
+CONTROL_REP3,AEG588A1_S3_L002_R1_001.fastq.gz,,unstranded
 ```
 
 Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
+The `strandedness` column accepts `unstranded`, `forward`, or `reverse`.
+If omitted, strandedness defaults to `unstranded`.
+If a sample appears on multiple rows, all rows for that sample must use the same strandedness value.
 
 Now, you can run the pipeline using:
 
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 nextflow run trestlebiosciences/rnaseqprokaryotes \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
+   --fasta reference.fasta \
+   --gff annotation.gff3 \
    --outdir <OUTDIR>
+```
+
+Run with a params file:
+
+```bash
+nextflow run trestlebiosciences/rnaseqprokaryotes \
+   -profile <docker/singularity/.../institute> \
+   -params-file params.json
 ```
 
 > [!WARNING]

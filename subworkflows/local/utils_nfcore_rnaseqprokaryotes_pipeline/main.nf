@@ -32,6 +32,8 @@ workflow PIPELINE_INITIALISATION {
     nextflow_cli_args //   array: List of positional nextflow CLI args
     outdir            //  string: The output directory where the results will be saved
     input             //  string: Path to input samplesheet
+    fasta             //  string: Path to reference FASTA
+    gff               //  string: Path to annotation GFF/GFF3
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
@@ -60,7 +62,7 @@ workflow PIPELINE_INITIALISATION {
         before_text = before_text.replaceAll(/\033\[[0-9;]*m/, '')
     }
 
-    command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samplesheet.csv --outdir <OUTDIR>"
+    command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samplesheet.csv --fasta reference.fasta --gff annotation.gff3 --outdir <OUTDIR>"
 
     UTILS_NFSCHEMA_PLUGIN (
         workflow,
@@ -88,11 +90,12 @@ workflow PIPELINE_INITIALISATION {
     channel
         .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
         .map {
-            meta, fastq_1, fastq_2 ->
+            meta, fastq_1, fastq_2, strandedness ->
+                def strandedness_value = strandedness ?: 'unstranded'
                 if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
+                    return [ meta.id, meta + [ single_end:true, strandedness:strandedness_value ], [ fastq_1 ] ]
                 } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
+                    return [ meta.id, meta + [ single_end:false, strandedness:strandedness_value ], [ fastq_1, fastq_2 ] ]
                 }
         }
         .groupTuple()
@@ -105,9 +108,16 @@ workflow PIPELINE_INITIALISATION {
         }
         .set { ch_samplesheet }
 
+    ch_fasta = channel.value([[id: 'reference'], file(fasta, checkIfExists: true)])
+    ch_gff = channel.value([[id: 'reference'], file(gff, checkIfExists: true)])
+    ch_reference_fasta = channel.value(file(fasta, checkIfExists: true))
+
     emit:
-    samplesheet = ch_samplesheet
-    versions    = ch_versions
+    samplesheet      = ch_samplesheet
+    fasta            = ch_fasta
+    gff              = ch_gff
+    reference_fasta  = ch_reference_fasta
+    versions         = ch_versions
 }
 
 /*
@@ -173,7 +183,13 @@ def validateInputSamplesheet(input) {
         error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
     }
 
-    return [ metas[0], fastqs ]
+    // Check that multiple runs of the same sample have the same strandedness
+    def strandedness = metas.collect { meta -> meta.strandedness ?: 'unstranded' }.unique()
+    if (strandedness.size() != 1) {
+        error("Please check input samplesheet -> Multiple runs of a sample must have the same strandedness: ${metas[0].id}")
+    }
+
+    return [ metas[0] + [ strandedness: strandedness[0] ], fastqs ]
 }
 //
 // Generate methods description for MultiQC

@@ -38,12 +38,14 @@ lint:
   readme:
     - nextflow_badge
     - nfcore_template_badge
+  merge_markers:
+    - modules/nf-core/bowtie2/align/tests/main.nf.test.snap
 
 template:
   org: trestlebiosciences
   name: rnaseqprokaryotes
   description: RNA-seq oriented towards prokaryotes
-  author: '@bradfordwinkelman'
+  author: "@bradfordwinkelman"
   version: 1.0.0dev
   force: true
   outdir: .

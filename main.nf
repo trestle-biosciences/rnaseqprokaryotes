@@ -29,6 +29,9 @@ workflow TRESTLEBIOSCIENCES_RNASEQPROKARYOTES {
 
     take:
     samplesheet // channel: samplesheet read in from --input
+    fasta       // channel: reference FASTA tuple for modules
+    gff         // channel: annotation GFF tuple for modules
+    reference_fasta // channel: reference FASTA path for modules
 
     main:
 
@@ -37,6 +40,9 @@ workflow TRESTLEBIOSCIENCES_RNASEQPROKARYOTES {
     //
     RNASEQPROKARYOTES (
         samplesheet,
+        fasta,
+        gff,
+        reference_fasta,
         params.multiqc_config,
         params.multiqc_logo,
         params.multiqc_methods_description,
@@ -64,6 +70,8 @@ workflow {
         args,
         params.outdir,
         params.input,
+        params.fasta,
+        params.gff,
         params.help,
         params.help_full,
         params.show_hidden
@@ -73,7 +81,10 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     TRESTLEBIOSCIENCES_RNASEQPROKARYOTES (
-        PIPELINE_INITIALISATION.out.samplesheet
+        PIPELINE_INITIALISATION.out.samplesheet,
+        PIPELINE_INITIALISATION.out.fasta,
+        PIPELINE_INITIALISATION.out.gff,
+        PIPELINE_INITIALISATION.out.reference_fasta
     )
     //
     // SUBWORKFLOW: Run completion tasks

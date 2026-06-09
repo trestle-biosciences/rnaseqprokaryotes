@@ -5,6 +5,11 @@
 */
 include { FASTQC                 } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { GFFREAD                } from '../modules/nf-core/gffread/main' 
+include { BOWTIE2_BUILD          } from '../modules/nf-core/bowtie2/build/main'
+include { BOWTIE2_ALIGN          } from '../modules/nf-core/bowtie2/align/main'
+include { SUBREAD_FEATURECOUNTS  } from '../modules/nf-core/subread/featurecounts/main'
+include { TRIMGALORE             } from '../modules/nf-core/trimgalore/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -19,7 +24,10 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_rnas
 workflow RNASEQPROKARYOTES {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    ch_samplesheet
+    ch_fasta
+    ch_gff
+    ch_reference_fasta
     multiqc_config
     multiqc_logo
     multiqc_methods_description
@@ -27,13 +35,48 @@ workflow RNASEQPROKARYOTES {
 
     main:
 
-    def ch_versions = channel.empty()
     def ch_multiqc_files = channel.empty()
-    //
-    // MODULE: Run FastQC
-    //
+    ch_versions = channel.empty()
+
     FASTQC(ch_samplesheet)
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.map{ _meta, file -> file })
+    ch_multiqc_files = ch_multiqc_files
+        .mix(FASTQC.out.zip)
+        .mix(FASTQC.out.html)
+
+    TRIMGALORE(ch_samplesheet)
+    ch_multiqc_files = ch_multiqc_files
+        .mix(TRIMGALORE.out.log)
+        .mix(TRIMGALORE.out.zip)
+        .mix(TRIMGALORE.out.html)
+
+    BOWTIE2_BUILD (ch_fasta) 
+
+    BOWTIE2_ALIGN (
+        TRIMGALORE.out.reads,
+        BOWTIE2_BUILD.out.index,
+        ch_fasta,
+        false, //params.save_unaligned,
+        true ///params.sort_bams
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(BOWTIE2_ALIGN.out.log)
+
+    //Module GFFREAD
+    GFFREAD (
+        ch_gff,
+        ch_reference_fasta
+    )
+   
+    GFFREAD.out.gtf.set{ ch_gtf }
+
+    //module subread/featurecounts
+    ch_fc = BOWTIE2_ALIGN.out.bam.map {meta, bam -> [[id:meta.id, single_end:meta.single_end, strandedness:meta.strandedness], bam]}
+    ch_fc = ch_fc.merge(ch_gtf)
+
+
+    SUBREAD_FEATURECOUNTS (
+         ch_fc
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary)
 
     //
     // Collate and save software versions
